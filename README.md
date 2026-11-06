@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://mohamedaitabdelmalik.github.io/Casablanca-Tramway-and-Busway-Planner/"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-open-e8e030?style=for-the-badge&labelColor=0b1226"></a>
-  <a href="https://github.com/mohamedaitabdelmalik/casablanca-tramway-busway"><img alt="Planner source" src="https://img.shields.io/badge/Planner-source%20code-6090b8?style=for-the-badge&labelColor=0b1226"></a>
+  <a href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-open-e8e030?style=for-the-badge&labelColor=0b1226"></a>
+  <a href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway"><img alt="Planner source" src="https://img.shields.io/badge/Planner-source%20code-6090b8?style=for-the-badge&labelColor=0b1226"></a>
 </p>
 
 ---
@@ -80,7 +80,7 @@ Then open <http://localhost:8000>.
 ```
 
 The planner itself lives in its own repository:
-[`casablanca-tramway-busway`](https://github.com/mohamedaitabdelmalik/casablanca-tramway-busway).
+[`casablanca-tramway-busway`](https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway).
 This page shows it in a frame, so it always displays the latest published version.
 
 ## Deploy your own copy
@@ -95,8 +95,8 @@ This page shows it in a frame, so it always displays the latest published versio
 
 Cette page réunit le calculateur d'itinéraire et le plan officiel du réseau. Le planificateur fonctionne entièrement dans le navigateur, sans serveur. Cliquez sur le plan pour l'agrandir, ou passez le planificateur en plein écran.
 
-- **Démo en ligne** : <https://mohamedaitabdelmalik.github.io/Casablanca-Tramway-and-Busway-Planner/>
-- **Code source du planificateur** : <https://github.com/mohamedaitabdelmalik/casablanca-tramway-busway>
+- **Démo en ligne** : <https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/>
+- **Code source du planificateur** : <https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway>
 
 ## Credits and notice
 
