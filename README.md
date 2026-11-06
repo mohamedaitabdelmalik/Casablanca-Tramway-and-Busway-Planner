@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-open-e8e030?style=for-the-badge&labelColor=0b1226"></a>
+  <a href="https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-open-e8e030?style=for-the-badge&labelColor=0b1226"></a>
   <a href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway"><img alt="Planner source" src="https://img.shields.io/badge/Planner-source%20code-6090b8?style=for-the-badge&labelColor=0b1226"></a>
 </p>
 
