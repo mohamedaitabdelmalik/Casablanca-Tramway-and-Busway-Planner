@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casablanca Tramway and Busway Planner | Mohamed Ait Abdelmalik</title>
+<meta name="description" content="Interactive route planner for the Casablanca tramway (T1 to T4) and busway (BW1 and BW2), by Mohamed Ait Abdelmalik.">
+<meta name="theme-color" content="#070c22">
+<meta property="og:title" content="Casablanca Tramway and Busway Planner">
+<meta property="og:description" content="Pick where you start and where you go. The map shows the way, in 2D or 3D.">
+<meta property="og:image" content="casablanca-night.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070c22'/%3E%3Cpath d='M5 22h8l4-12h10' fill='none' stroke='%235fa8ff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='27' cy='10' r='3' fill='%23ff7a1a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* the six line colours of the network, slightly lifted for a dark screen */
+  --t1:#ff7a1a; --t2:#ffe14d; --t3:#d1608f; --t4:#5fa8ff; --bw1:#3aa04a; --bw2:#86e35f;
+  /* Casablanca at night */
+  --night:#070c22; --night-2:#0d1535; --night-3:#16214f; --edge:#26356f;
+  --ink:#f4f2ff; --muted:#aab3d8; --moon:#ffe9b0; --moon-ink:#231a00;
+  --rail:linear-gradient(90deg,var(--t1),var(--t2),var(--t3),var(--t4),var(--bw1),var(--bw2));
+  --rail-v:linear-gradient(180deg,var(--t1),var(--t2),var(--t3),var(--t4),var(--bw1),var(--bw2));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:5rem}
+body{margin:0;background:var(--night);color:var(--ink);font:400 1.0625rem/1.65 "Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--moon);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1180px,100% - 2.5rem);margin-inline:auto}
+h1,h2,h3{font-family:"Bricolage Grotesque","Hanken Grotesk",system-ui,sans-serif;margin:0;line-height:1.04}
+
+/* ---------- header, and the side line on wide screens ---------- */
+.top{background:rgba(7,12,34,.92);position:sticky;top:0;z-index:30;border-bottom:3px solid transparent;border-image:var(--rail) 1}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-block:.75rem}
+.brand{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.05rem;text-decoration:none;letter-spacing:-.01em}
+.brand small{font:500 .92rem "Hanken Grotesk",sans-serif;color:var(--muted);margin-left:.6rem}
+.stops{display:flex;gap:.2rem;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.stops a{display:block;text-decoration:none;font-weight:500;padding:.4rem .8rem;border-radius:2rem;color:var(--muted)}
+.stops a:hover,.stops a[aria-current="true"]{color:var(--ink);background:var(--night-3)}
+.stops i{display:none}
+@media (max-width:640px){.brand small{display:none}}
+
+@media (min-width:1180px){
+  .top{background:transparent;border:0;position:static}
+  .top .wrap{display:block;padding:0;width:0}
+  .brand{position:fixed;top:1.4rem;left:2.2rem;z-index:30;width:6.5rem;line-height:1.15}
+  .brand small{display:none}
+  .stops{position:fixed;left:2.4rem;top:50%;transform:translateY(-50%);z-index:30;flex-direction:column;gap:0;
+    padding-block:.4rem}
+  .stops::before{content:"";position:absolute;left:.46rem;top:0;bottom:0;width:6px;border-radius:6px;background:var(--rail-v)}
+  .stops li{position:relative}
+  .stops a{display:flex;align-items:center;gap:1rem;padding:.9rem 0;background:none;border-radius:0;color:var(--muted)}
+  .stops a:hover,.stops a[aria-current="true"]{background:none;color:var(--ink)}
+  .stops i{display:block;position:relative;flex:none;width:1.05rem;height:1.05rem;border-radius:50%;background:var(--night);border:4px solid var(--ink);transition:transform .25s}
+  .stops a[aria-current="true"] i{transform:scale(1.35);background:var(--moon);border-color:var(--night);box-shadow:0 0 0 4px var(--moon)}
+  .stops span{font-size:.95rem;opacity:0;transform:translateX(-6px);transition:opacity .2s,transform .2s;pointer-events:none}
+  .stops a:hover span,.stops a:focus-visible span,.stops a[aria-current="true"] span{opacity:1;transform:none}
+  main,.foot{margin-left:7.5rem}
+  .wrap{width:min(1100px,100% - 2.5rem)}
+  .top .wrap{width:0}
+}
+@media (min-width:1180px) and (max-width:1380px){main,.foot{margin-left:6.5rem}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding-block:clamp(2.5rem,6vw,4.5rem) clamp(2rem,4vw,3.5rem);
+  background:
+   radial-gradient(1px 1px at 12% 18%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 34% 8%,#fff7 50%,transparent 51%),
+   radial-gradient(1.5px 1.5px at 62% 22%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 78% 6%,#fff6 50%,transparent 51%),
+   radial-gradient(1px 1px at 46% 30%,#fff5 50%,transparent 51%),radial-gradient(1.5px 1.5px at 6% 52%,#fff6 50%,transparent 51%)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(1.8rem,4vw,3rem)}
+.hero h1{font-size:clamp(2.7rem,6.6vw,5.6rem);font-weight:800;letter-spacing:-.035em;line-height:.98;max-width:13em}
+.hero p.sub{color:var(--muted);font-size:1.15rem;max-width:34rem;margin:1.4rem 0 1.8rem}
+.btns{display:flex;gap:.8rem;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none;font:700 1rem "Hanken Grotesk",sans-serif;padding:.85rem 1.4rem;border-radius:3rem;border:2px solid var(--moon);cursor:pointer;color:var(--ink);background:transparent;transition:transform .15s,background .15s,color .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn.go{background:var(--moon);color:var(--moon-ink)}
+.btn.quiet{border-color:var(--edge)}
+.btn.quiet:hover{border-color:var(--ink)}
+.btn.small{padding:.45rem 1rem;font-size:.92rem}
+
+.actions{display:flex;gap:1.4rem 2.2rem;flex-wrap:wrap;align-items:center}
+.trip{display:inline-grid;gap:.15rem;padding:1rem 1.2rem 1rem 1.4rem;border-radius:1rem;background:var(--night-2);border:1px solid var(--edge);position:relative;max-width:100%}
+.trip::before{content:"";position:absolute;left:0;top:.8rem;bottom:.8rem;width:5px;border-radius:5px;background:var(--rail-v)}
+.trip b{font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem}
+.trip span{color:var(--muted);font-size:.95rem}
+.trip button{justify-self:start;margin-top:.5rem;font:700 .95rem "Hanken Grotesk",sans-serif;color:var(--moon);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:.25em}
+
+.art{width:100%;height:auto;display:block;overflow:visible}
+.art .ln{fill:none;stroke-width:12;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0}
+.art .bwl{fill:none;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.art .bwd{fill:none;stroke:#fff;stroke-width:4;stroke-dasharray:4 20;stroke-dashoffset:-8}
+.art .st{fill:#fff;stroke:var(--night);stroke-width:2.5}
+.art .ring{fill:var(--night);stroke:#fff;stroke-width:4}
+.art .tm text{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;text-anchor:middle}
+.art .moon{fill:var(--moon)}
+@media (prefers-reduced-motion:no-preference){
+  .art .ln{stroke-dashoffset:1;animation:draw 1.6s cubic-bezier(.6,.05,.2,1) forwards;animation-delay:calc(var(--i)*.28s + .2s)}
+  .art .bwl,.art .bwd{opacity:0;animation:fade .9s ease forwards;animation-delay:calc(var(--i)*.28s + .5s)}
+  .art .st,.art .ring,.art .tm{opacity:0;animation:fade .5s ease forwards;animation-delay:2.2s}
+}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fade{to{opacity:1}}
+
+/* ---------- sections ---------- */
+section{padding-block:clamp(2.2rem,5vw,3.8rem)}
+section h2{font-size:clamp(1.9rem,4vw,3rem);font-weight:800;letter-spacing:-.025em;margin-bottom:.6rem}
+.lead{color:var(--muted);max-width:38rem;margin:0 0 1.6rem}
+
+/* planner in a tram window */
+.window{background:var(--night-2);border:1px solid var(--edge);border-radius:1.6rem;overflow:hidden;position:relative}
+.window::before{content:"";display:block;height:6px;background:var(--rail)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;padding:.7rem 1.1rem;border-bottom:1px solid var(--edge)}
+.bar strong{font-family:"Bricolage Grotesque",sans-serif;font-weight:700}
+.frame{position:relative;background:#fff;height:min(82vh,860px);min-height:520px}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.window:fullscreen{border-radius:0;display:flex;flex-direction:column}
+.window:fullscreen .frame{flex:1;height:auto}
+.fallback{margin:.8rem 1.1rem 1rem;color:var(--muted);font-size:.92rem}
+.fallback a{text-underline-offset:.2em}
+
+/* official map */
+.mapbox{position:relative;border:1px solid var(--edge);border-radius:1.4rem;overflow:hidden;background:#cfe6f3;display:block;width:100%;padding:0;cursor:zoom-in}
+.mapbox img{display:block;width:100%;height:auto}
+.mapbox span{position:absolute;right:.8rem;bottom:.8rem;background:var(--night);color:var(--ink);font-weight:700;font-size:.9rem;padding:.4rem .9rem;border-radius:2rem;border:1px solid var(--edge)}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;list-style:none;margin:1rem 0 0;padding:0;color:var(--muted);font-size:.95rem}
+.legend li{display:flex;align-items:center;gap:.5rem}
+.legend i{width:1.7rem;height:.5rem;border-radius:1rem;display:inline-block}
+.credit{margin:.8rem 0 0;color:var(--muted);font-size:.88rem}
+
+/* illustrated night view, under the official map */
+.night{margin:clamp(2rem,5vw,3.2rem) 0 0;position:relative;border-radius:1.4rem;overflow:hidden;border:1px solid var(--edge);box-shadow:0 30px 80px -30px rgba(95,168,255,.35)}
+.night img{display:block;width:100%;height:auto}
+.night figcaption{position:absolute;left:0;right:0;bottom:0;padding:2.5rem 1.2rem .9rem;color:var(--ink);font-size:.95rem;background:linear-gradient(180deg,transparent,rgba(7,12,34,.85))}
+
+dialog.zoom{border:0;padding:0;background:var(--night);color:var(--ink);width:min(96vw,1500px);max-height:94vh;border-radius:1rem}
+dialog.zoom::backdrop{background:rgba(3,7,20,.82)}
+dialog.zoom .head{display:flex;justify-content:space-between;align-items:center;padding:.6rem 1rem;position:sticky;top:0;background:var(--night);border-bottom:1px solid var(--edge)}
+dialog.zoom .scroll{overflow:auto;max-height:calc(94vh - 3.4rem)}
+dialog.zoom img{display:block;width:2400px;max-width:none;height:auto}
+
+/* about: a boarding pass */
+.pass{display:grid;grid-template-columns:1fr 17rem;background:var(--ink);color:#10172e;border-radius:1.4rem;overflow:hidden;position:relative}
+.pass .main{padding:clamp(1.4rem,3vw,2.3rem);position:relative}
+.pass .main::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--rail-v)}
+.pass .main{padding-left:clamp(1.9rem,3.5vw,2.7rem)}
+.pass .stub{padding:clamp(1.4rem,3vw,2.2rem);border-left:3px dashed #aab4d8;display:flex;flex-direction:column;gap:.8rem;justify-content:center;position:relative}
+.pass .stub::before,.pass .stub::after{content:"";position:absolute;left:-1.1rem;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--night)}
+.pass .stub::before{top:-.9rem}
+.pass .stub::after{bottom:-.9rem}
+.pass h3{font-size:clamp(1.6rem,3.2vw,2.3rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.8rem}
+.pass p{margin:0 0 1.2rem;color:#3a4468;max-width:34rem}
+.facts{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:.8rem 2.2rem;margin:0}
+.facts dt{font-size:.85rem;font-weight:700;color:#5a6590}
+.facts dd{margin:0;font-weight:700}
+.stub .btn{text-align:center;color:#10172e;border-color:#10172e}
+.stub .btn.go{background:#10172e;color:#fff}
+.stub .btn.quiet:hover{background:#e4e9fb}
+@media (max-width:760px){
+  .pass{grid-template-columns:1fr}
+  .pass .stub{border-left:0;border-top:3px dashed #aab4d8}
+  .pass .stub::before{top:-.9rem;left:-.9rem}
+  .pass .stub::after{top:-.9rem;bottom:auto;left:auto;right:-.9rem}
+  .facts{grid-template-columns:1fr 1fr}
+}
+
+/* footer: end of the line */
+.foot{background:var(--night-2);border-top:1px solid var(--edge);margin-top:1.5rem}
+.terminus{display:flex;align-items:center;gap:1rem;padding-top:2.2rem}
+.terminus .dot{width:1.4rem;height:1.4rem;border-radius:50%;border:5px solid var(--ink);background:var(--night-2);flex:none}
+.terminus .rail{flex:1;height:6px;border-radius:6px;background:var(--rail)}
+.terminus strong{font-family:"Bricolage Grotesque",sans-serif;font-weight:700}
+.foot .row{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-block:1.2rem 1.8rem;color:var(--muted);font-size:.95rem}
+.foot .row a{margin-left:1.1rem;text-underline-offset:.2em}
+.foot .row a:first-child{margin-left:0}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#start">Mohamed Ait Abdelmalik<small>Geospatial projects</small></a>
+    <nav aria-label="Sections">
+      <ul class="stops">
+        <li><a href="#start"><i></i><span>Start</span></a></li>
+        <li><a href="#planner"><i></i><span>Planner</span></a></li>
+        <li><a href="#map"><i></i><span>Network</span></a></li>
+        <li><a href="#project"><i></i><span>About</span></a></li>
+        <li><a href="#contact"><i></i><span>Contact</span></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="start">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Plan your trip across Casablanca.</h1>
+        <p class="sub">An interactive route planner for the tramway lines T1 to T4 and the busway lines BW1 and BW2. Pick where you start and where you go, and the map shows the way, in 2D or in 3D.</p>
+        <div class="actions">
+        <div class="btns">
+          <a class="btn go" href="#planner">Use the planner</a>
+          <a class="btn quiet" href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway" target="_blank" rel="noopener">View source code</a>
+        </div>
+        <div class="trip">
+          <b>Aïn Diab to Faculté Ben M'Sick</b>
+          <span>57 min, 29 stations, 1 transfer</span>
+          <button type="button" id="try-trip">Plan this trip</button>
+        </div>
+        </div>
+      </div>
+
+      <svg class="art" viewBox="40 8 1220 626" role="img" aria-label="Plan of the six tramway and busway lines of Casablanca">
+<defs><radialGradient id="glow"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".55"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient></defs>
+<circle cx="880" cy="38" r="90" fill="url(#glow)"/><circle class="moon" cx="880" cy="38" r="26"/><circle cx="893" cy="31" r="22" fill="#070c22" opacity=".16"/>
+<g>
+<path class="ln" style="--i:0" pathLength="1" stroke="#e07828" d="M1225 263 L1071.6 314.5 Q1064 317 1056.3 314.8 L916.6 274.8 Q907 272 904.3 262.4 L891.3 215.4 Q887 200 871.0 200.0 L697.0 200.0 Q681 200 677.1 215.5 L617.9 453.5 Q614 469 598.0 469.0 L488.0 469.0 Q478 469 472.0 477.0 L434 528"/>
+<path class="ln" style="--i:1" pathLength="1" stroke="#e8e030" d="M1136 127 L922.4 206.5 Q913 210 915.6 219.6 L924.4 251.4 Q927 261 918.7 266.5 L751.7 377.3 Q740 385 727.3 379.1 L617.9 328.1 Q607 323 596.5 328.9 L530.5 366.1 Q520 372 513.8 361.7 L436 232"/>
+<path class="ln" style="--i:2" pathLength="1" stroke="#985070" d="M708 165 L832.0 447.0 Q832 447 832.0 447.0 L956.1 388.4 Q976 379 987.2 398.0 L1019 452"/>
+<path class="ln" style="--i:3" pathLength="1" stroke="#6090b8" d="M643 241 L756.0 241.0 Q778 241 794.1 256.0 L888.8 344.4 Q899 354 912.0 348.7 L928.7 341.8 Q938 338 945.1 345.1 L970.5 370.5 Q979 379 989.1 372.5 L1053.9 330.5 Q1064 324 1075.4 327.7 L1134 347"/>
+<path class="bwl" style="--i:4" stroke="#307030" d="M468 482 L588.1 537.0 Q599 542 610.3 538.1 L828.7 461.9 Q840 458 846.3 468.2 L857.7 486.8 Q864 497 875.2 492.6 L921.8 474.4 Q933 470 942.5 477.4 L978 505"/><path class="bwd" style="--i:4" d="M468 482 L588.1 537.0 Q599 542 610.3 538.1 L828.7 461.9 Q840 458 846.3 468.2 L857.7 486.8 Q864 497 875.2 492.6 L921.8 474.4 Q933 470 942.5 477.4 L978 505"/>
+<path class="bwl" style="--i:5" stroke="#70b850" d="M553 321 L75 602"/><path class="bwd" style="--i:5" d="M553 321 L75 602"/>
+</g><g>
+<circle class="st" cx="718" cy="189" r="5"/>
+<circle class="st" cx="733" cy="201" r="5"/>
+<circle class="st" cx="890" cy="204" r="5"/>
+<circle class="st" cx="915" cy="214" r="5"/>
+<circle class="st" cx="674" cy="232" r="5"/>
+<circle class="st" cx="753" cy="241" r="5"/>
+<circle class="st" cx="746" cy="252" r="5"/>
+<circle class="st" cx="925" cy="262" r="5"/>
+<circle class="st" cx="922" cy="276" r="5"/>
+<circle class="st" cx="848" cy="304" r="5"/>
+<circle class="st" cx="1056" cy="315" r="5"/>
+<circle class="st" cx="844" cy="318" r="5"/>
+<circle class="st" cx="652" cy="323" r="5"/>
+<circle class="st" cx="1063" cy="328" r="5"/>
+<circle class="st" cx="496" cy="333" r="5"/>
+<circle class="st" cx="803" cy="345" r="5"/>
+<circle class="st" cx="658" cy="346" r="5"/>
+<circle class="st" cx="505" cy="348" r="5"/>
+<circle class="st" cx="794" cy="362" r="5"/>
+<circle class="st" cx="981" cy="398" r="5"/>
+<circle class="st" cx="828" cy="438" r="5"/>
+<circle class="ring" cx="980" cy="376" r="7.5"/>
+<circle class="ring" cx="923" cy="410" r="7.5"/>
+</g><g class="tm">
+<circle cx="1225" cy="263" r="16" fill="#e07828" stroke="#070c22" stroke-width="3"/><text x="1225" y="267.7" style="font-size:13px;fill:#fff">T1</text>
+<circle cx="434" cy="528" r="16" fill="#e07828" stroke="#070c22" stroke-width="3"/><text x="434" y="532.7" style="font-size:13px;fill:#fff">T1</text>
+<circle cx="1136" cy="127" r="16" fill="#e8e030" stroke="#070c22" stroke-width="3"/><text x="1136" y="131.7" style="font-size:13px;fill:#10172e">T2</text>
+<circle cx="436" cy="232" r="16" fill="#e8e030" stroke="#070c22" stroke-width="3"/><text x="436" y="236.7" style="font-size:13px;fill:#10172e">T2</text>
+<circle cx="708" cy="165" r="16" fill="#985070" stroke="#070c22" stroke-width="3"/><text x="708" y="169.7" style="font-size:13px;fill:#fff">T3</text>
+<circle cx="1019" cy="452" r="16" fill="#985070" stroke="#070c22" stroke-width="3"/><text x="1019" y="456.7" style="font-size:13px;fill:#fff">T3</text>
+<circle cx="643" cy="241" r="16" fill="#6090b8" stroke="#070c22" stroke-width="3"/><text x="643" y="245.7" style="font-size:13px;fill:#fff">T4</text>
+<circle cx="1134" cy="347" r="16" fill="#6090b8" stroke="#070c22" stroke-width="3"/><text x="1134" y="351.7" style="font-size:13px;fill:#fff">T4</text>
+<circle cx="468" cy="482" r="16" fill="#307030" stroke="#070c22" stroke-width="3"/><text x="468" y="485.6" style="font-size:10px;fill:#fff">BW1</text>
+<circle cx="978" cy="505" r="16" fill="#307030" stroke="#070c22" stroke-width="3"/><text x="978" y="508.6" style="font-size:10px;fill:#fff">BW1</text>
+<circle cx="553" cy="321" r="16" fill="#70b850" stroke="#070c22" stroke-width="3"/><text x="553" y="324.6" style="font-size:10px;fill:#10172e">BW2</text>
+<circle cx="75" cy="602" r="16" fill="#70b850" stroke="#070c22" stroke-width="3"/><text x="75" y="605.6" style="font-size:10px;fill:#10172e">BW2</text>
+</g></svg>
+    </div>
+  </div>
+
+  <section id="planner" style="padding-top:1rem">
+    <div class="wrap">
+      <div class="window" id="app">
+        <div class="bar">
+          <strong>Route planner</strong>
+          <button class="btn quiet small" id="fs" type="button">Full screen</button>
+        </div>
+        <div class="frame">
+          <iframe id="planner-frame" title="Tramway Casablanca – Carte interactive et calcul d'itinéraire" src="https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/" loading="lazy" allow="fullscreen; geolocation"></iframe>
+        </div>
+        <p class="fallback">If the planner does not appear, open <a href="https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/" target="_blank" rel="noopener">Tramway Casablanca – Carte interactive et calcul d'itinéraire</a> in its own tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="map">
+    <div class="wrap">
+      <h2>The network</h2>
+      <p class="lead">Six lines across the city: four tramway lines and two busway lines. Click the map to enlarge it.</p>
+      <button class="mapbox" id="open-map" type="button" aria-label="Enlarge the official network map">
+        <img src="network-map.jpg" width="2400" height="1863" alt="Official map of the Casablanca tramway and busway network showing lines T1, T2, T3, T4, BW1 and BW2 and their stations" loading="lazy">
+        <span>Click to enlarge</span>
+      </button>
+      <ul class="legend" aria-label="Line colours">
+        <li><i style="background:var(--t1)"></i>Tramway T1</li>
+        <li><i style="background:var(--t2)"></i>Tramway T2</li>
+        <li><i style="background:var(--t3)"></i>Tramway T3</li>
+        <li><i style="background:var(--t4)"></i>Tramway T4</li>
+        <li><i style="background:var(--bw1)"></i>Busway BW1</li>
+        <li><i style="background:var(--bw2)"></i>Busway BW2</li>
+      </ul>
+      <p class="credit">Map: official Casa Tramway and Casa Busway network plan (October 2025). It belongs to its publisher and is shown here for reference.</p>
+
+      <figure class="night">
+        <img src="casablanca-night.jpg" width="1280" height="640" alt="Illustration of Casablanca at night: the six tramway and busway lines run across the dark coast, past the lighthouse, the mosque, the cathedral and the stadium, under a full moon" loading="lazy">
+        <figcaption>Casablanca after dark, with the six lines of the planner.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="project">
+    <div class="wrap">
+      <h2>About the project</h2>
+      <p class="lead">Everything runs in your browser, so there is no server to wait for.</p>
+      <div class="pass">
+        <div class="main">
+          <h3>Casablanca Tramway and Busway Planner</h3>
+          <p>A route calculator for the Casablanca public transport network. It covers the four tramway lines and the two busway lines on an interactive map, with transfers, a 3D view, a PDF of your trip and sharing on WhatsApp.</p>
+          <dl class="facts">
+            <div><dt>Lines</dt><dd>T1 to T4, BW1, BW2</dd></div>
+            <div><dt>Built with</dt><dd>Leaflet, MapLibre, JavaScript</dd></div>
+            <div><dt>Runs</dt><dd>In the browser</dd></div>
+          </dl>
+        </div>
+        <div class="stub">
+          <a class="btn go" href="#planner">Use the planner</a>
+          <a class="btn quiet" href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway" target="_blank" rel="noopener">View source code</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog class="zoom" id="zoom" aria-label="Official network map, enlarged">
+  <div class="head"><strong>Network map</strong><button class="btn quiet small" id="close-map" type="button">Close</button></div>
+  <div class="scroll"><img src="network-map.jpg" alt="Official map of the Casablanca tramway and busway network, enlarged" loading="lazy"></div>
+</dialog>
+
+<footer class="foot" id="contact">
+  <div class="wrap">
+    <div class="terminus"><span class="dot" aria-hidden="true"></span><span class="rail" aria-hidden="true"></span><strong>End of the line. Say hello.</strong></div>
+    <div class="row">
+      <span>© <span id="year">2026</span> Mohamed Ait Abdelmalik. All rights reserved.</span>
+      <span>
+        <a href="mailto:mohamed.aitabdelmalik@gmail.com">Email</a>
+        <a href="https://www.linkedin.com/in/mohamed-ait-abdelmalik-a7b468195/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/mohamedaitabdelmalik" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var PLANNER = 'https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/';
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Full screen for the planner window
+  var app = document.getElementById('app'), fs = document.getElementById('fs');
+  if (!app.requestFullscreen) { fs.style.display = 'none'; }
+  fs.addEventListener('click', function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); } else { app.requestFullscreen(); }
+  });
+  document.addEventListener('fullscreenchange', function () {
+    fs.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+  });
+
+  // "Plan this trip" fills the planner with the example journey
+  document.getElementById('try-trip').addEventListener('click', function () {
+    var q = '?from=' + encodeURIComponent('Aïn Diab') + '&to=' + encodeURIComponent("Faculté Ben M'Sick");
+    var f = document.getElementById('planner-frame');
+    f.removeAttribute('loading');
+    f.src = PLANNER + q;
+    document.getElementById('planner').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // Enlarge the official map
+  var dlg = document.getElementById('zoom');
+  document.getElementById('open-map').addEventListener('click', function () { dlg.showModal(); });
+  document.getElementById('close-map').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+
+  // The side line follows you: the current stop is lit
+  var links = [].slice.call(document.querySelectorAll('.stops a'));
+  var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  function mark() {
+    var y = window.scrollY + window.innerHeight * 0.35, cur = 0;
+    targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top + window.scrollY <= y) cur = i; });
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) cur = links.length - 1;
+    links.forEach(function (a, i) { if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+  }
+  window.addEventListener('scroll', mark, { passive: true });
+  window.addEventListener('resize', mark);
+  mark();
+})();
+</script>
+</body>
+</html>
