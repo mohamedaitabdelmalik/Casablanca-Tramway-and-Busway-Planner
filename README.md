@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Casablanca Tramway and Busway Planner: illustration of Casablanca at night with six colored transit lines" width="100%">
+  <img src="https://github.com/mohamedaitabdelmalik/Casablanca-Tramway-and-Busway-Planner/blob/main/casablanca-night.jpg?raw=true" alt="Casablanca Tramway and Busway Planner: illustration of Casablanca at night with six colored transit lines" width="100%">
 </p>
 
 <h1 align="center">Casablanca Tramway &amp; Busway Planner</h1>
