@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casablanca Tramway and Busway Planner | Mohamed Ait Abdelmalik</title>
+<meta name="description" content="Interactive route planner for the Casablanca tramway (T1 to T4) and busway (BW1 and BW2), by Mohamed Ait Abdelmalik.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101a33'/%3E%3Cpath d='M5 22h8l4-12h10' fill='none' stroke='%236090b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='27' cy='10' r='3' fill='%23e07828'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* line colours taken from the official network map */
+  --t1:#e07828; --t2:#e8e030; --t3:#985070; --t4:#6090b8; --bw1:#307030; --bw2:#70b850;
+  --bg:#0b1226; --bg-2:#111b38; --ink:#eef2ff; --muted:#a3afd0; --line:#26335e;
+  --cta:#e8e030; --cta-ink:#1b1a00;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1.0625rem/1.65 "DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--cta);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1180px,100% - 2.5rem);margin-inline:auto}
+h1,h2,h3{font-family:"Sora","DM Sans",system-ui,sans-serif;margin:0;line-height:1.08}
+
+/* header: a station name board */
+.site-header{background:var(--bg-2);border-bottom:4px solid transparent;border-image:linear-gradient(90deg,var(--t1) 0 16.6%,var(--t2) 0 33.3%,var(--t3) 0 50%,var(--t4) 0 66.6%,var(--bw1) 0 83.3%,var(--bw2) 0) 1;position:sticky;top:0;z-index:20}
+.site-header .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-block:.8rem}
+.board{display:flex;align-items:center;gap:.8rem;text-decoration:none}
+.board b{font-family:"Sora",sans-serif;font-weight:800;font-size:1.05rem;border:2px solid var(--ink);padding:.25rem .7rem;border-radius:.4rem}
+.board span{color:var(--muted);font-size:.95rem}
+nav{display:flex;gap:.25rem;flex-wrap:wrap}
+nav a{text-decoration:none;font-weight:500;padding:.45rem .85rem;border-radius:2rem;color:var(--muted)}
+nav a:hover{color:var(--ink);background:var(--line)}
+@media (max-width:640px){.board span{display:none}}
+
+/* hero */
+.hero{padding-block:clamp(2.5rem,6vw,4.5rem) clamp(1.5rem,3vw,2.5rem)}
+.hero h1{font-size:clamp(2.3rem,6vw,4.4rem);font-weight:800;letter-spacing:-.025em;max-width:16ch}
+.hero p{color:var(--muted);max-width:38rem;font-size:1.15rem;margin:1.2rem 0 1.8rem}
+.btns{display:flex;gap:.8rem;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none;font-weight:700;padding:.8rem 1.35rem;border-radius:3rem;border:2px solid var(--cta);font:inherit;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--cta);color:var(--cta-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.small{padding:.45rem 1rem;font-size:.92rem}
+
+/* sections */
+section{padding-block:clamp(2rem,5vw,3.5rem)}
+section h2{font-size:clamp(1.6rem,3.4vw,2.3rem);font-weight:700;margin-bottom:.5rem}
+.lead{color:var(--muted);max-width:40rem;margin:0 0 1.5rem}
+
+/* embedded planner */
+.app{background:var(--bg-2);border:1px solid var(--line);border-radius:1.1rem;overflow:hidden}
+.app-bar{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+.app-bar strong{font-family:"Sora",sans-serif;font-weight:700;font-size:1rem}
+.app-bar .acts{display:flex;gap:.5rem;flex-wrap:wrap}
+.frame{position:relative;background:#fff;height:min(82vh,860px);min-height:520px}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.app:fullscreen{border-radius:0;display:flex;flex-direction:column}
+.app:fullscreen .frame{flex:1;height:auto}
+.fallback{margin:.8rem 1rem 1rem;color:var(--muted);font-size:.9rem}
+.fallback a{text-underline-offset:.2em}
+
+/* official map */
+.mapbox{position:relative;border:1px solid var(--line);border-radius:1.1rem;overflow:hidden;background:#cfe6f3;display:block;width:100%;padding:0;cursor:zoom-in}
+.mapbox img{display:block;width:100%;height:auto}
+.mapbox span{position:absolute;right:.8rem;bottom:.8rem;background:var(--bg);color:var(--ink);font-weight:700;font-size:.9rem;padding:.4rem .9rem;border-radius:2rem;border:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;list-style:none;margin:1rem 0 0;padding:0;color:var(--muted);font-size:.95rem}
+.legend li{display:flex;align-items:center;gap:.5rem}
+.legend i{width:1.7rem;height:.5rem;border-radius:1rem;display:inline-block}
+.credit{margin:.8rem 0 0;color:var(--muted);font-size:.88rem}
+dialog.zoom{border:0;padding:0;background:var(--bg);color:var(--ink);width:min(96vw,1500px);max-height:94vh;border-radius:1rem}
+dialog.zoom::backdrop{background:rgba(3,7,20,.8)}
+dialog.zoom .top{display:flex;justify-content:space-between;align-items:center;padding:.6rem 1rem;position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line)}
+dialog.zoom .scroll{overflow:auto;max-height:calc(94vh - 3.4rem)}
+dialog.zoom img{display:block;width:2400px;max-width:none;height:auto}
+
+/* project ticket */
+.ticket{display:grid;grid-template-columns:1fr 17rem;background:var(--ink);color:#10172e;border-radius:1.2rem;overflow:hidden;position:relative}
+.ticket .main{padding:clamp(1.4rem,3vw,2.2rem)}
+.ticket .stub{padding:clamp(1.4rem,3vw,2.2rem);border-left:3px dashed #aab4d8;display:flex;flex-direction:column;gap:.8rem;justify-content:center;position:relative}
+.ticket .stub::before,.ticket .stub::after{content:"";position:absolute;left:-1.1rem;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--bg)}
+.ticket .stub::before{top:-.9rem}
+.ticket .stub::after{bottom:-.9rem}
+.ticket h3{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;margin-bottom:.8rem}
+.ticket p{margin:0 0 1.2rem;color:#3a4468;max-width:34rem}
+.facts{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:.8rem 2.2rem;margin:0}
+.facts dt{font-size:.82rem;font-weight:700;color:#5a6590}
+.facts dd{margin:0;font-weight:700}
+.stub .btn{text-align:center}
+.stub .btn.primary{background:#10172e;color:#fff;border-color:#10172e}
+.stub .btn.ghost{color:#10172e;border-color:#10172e}
+.stub .btn.ghost:hover{background:#e4e9fb}
+@media (max-width:760px){
+  .ticket{grid-template-columns:1fr}
+  .ticket .stub{border-left:0;border-top:3px dashed #aab4d8}
+  .ticket .stub::before{top:-.9rem;left:-.9rem}
+  .ticket .stub::after{top:-.9rem;bottom:auto;left:auto;right:-.9rem}
+  .facts{grid-template-columns:1fr 1fr}
+}
+
+/* footer: end of the line */
+.site-footer{background:var(--bg-2);border-top:1px solid var(--line);margin-top:1.5rem}
+.terminus{display:flex;align-items:center;gap:1rem;padding-top:2rem}
+.terminus .dot{width:1.3rem;height:1.3rem;border-radius:50%;border:5px solid var(--ink);background:var(--bg-2);flex:none}
+.terminus .rail{flex:1;height:5px;border-radius:5px;background:linear-gradient(90deg,var(--t1),var(--t2),var(--t3),var(--t4),var(--bw1),var(--bw2))}
+.terminus strong{font-family:"Sora",sans-serif;font-weight:700}
+.site-footer .row{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-block:1.2rem 1.8rem;color:var(--muted);font-size:.95rem}
+.site-footer .row a{margin-left:1.1rem;text-underline-offset:.2em}
+.site-footer .row a:first-child{margin-left:0}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="board" href="#top"><b>Mohamed Ait Abdelmalik</b><span>Geospatial projects</span></a>
+    <nav aria-label="Main">
+      <a href="#planner">Planner</a>
+      <a href="#map">Network map</a>
+      <a href="#project">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <h1>Plan your trip across Casablanca.</h1>
+    <p>An interactive route planner for the tramway lines T1 to T4 and the busway lines BW1 and BW2. It is right below: pick where you start and where you go, and the map shows the way.</p>
+    <div class="btns">
+      <a class="btn primary" href="#planner">Use the planner</a>
+      <a class="btn ghost" href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway" target="_blank" rel="noopener">View source code</a>
+    </div>
+  </div>
+
+  <section id="planner" style="padding-top:1rem">
+    <div class="wrap">
+      <div class="app" id="app">
+        <div class="app-bar">
+          <strong>Route planner</strong>
+          <div class="acts">
+            <button class="btn ghost small" id="fs" type="button">Full screen</button>
+          </div>
+        </div>
+        <div class="frame">
+          <iframe id="planner-frame" title="Tramway Casablanca – Carte interactive et calcul d'itinéraire" src="https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/" loading="lazy" allow="fullscreen; geolocation"></iframe>
+        </div>
+        <p class="fallback">If the planner does not appear, open <a href="https://mohamedaitabdelmalik.github.io/Casablanca-Planner-Tramway-and-Busway/" target="_blank" rel="noopener">Tramway Casablanca – Carte interactive et calcul d'itinéraire</a> in its own tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="map">
+    <div class="wrap">
+      <h2>The network</h2>
+      <p class="lead">Six lines across the city: four tramway lines and two busway lines. Click the map to enlarge it.</p>
+      <button class="mapbox" id="open-map" type="button" aria-label="Enlarge the official network map">
+        <img src="network-map.jpg" width="2400" height="1863" alt="Official map of the Casablanca tramway and busway network showing lines T1, T2, T3, T4, BW1 and BW2 and their stations" loading="lazy">
+        <span>Click to enlarge</span>
+      </button>
+      <ul class="legend" aria-label="Line colours">
+        <li><i style="background:var(--t1)"></i>Tramway T1</li>
+        <li><i style="background:var(--t2)"></i>Tramway T2</li>
+        <li><i style="background:var(--t3)"></i>Tramway T3</li>
+        <li><i style="background:var(--t4)"></i>Tramway T4</li>
+        <li><i style="background:var(--bw1)"></i>Busway BW1</li>
+        <li><i style="background:var(--bw2)"></i>Busway BW2</li>
+      </ul>
+      <p class="credit">Map: official Casa Tramway and Casa Busway network plan (October 2025). It belongs to its publisher and is shown here for reference.</p>
+    </div>
+  </section>
+
+  <section id="project">
+    <div class="wrap">
+      <h2>About the project</h2>
+      <p class="lead">Everything runs in your browser, so there is no server to wait for.</p>
+      <div class="ticket">
+        <div class="main">
+          <h3>Casablanca Tramway and Busway Planner</h3>
+          <p>A route calculator for the Casablanca public transport network. It covers the four tramway lines and the two busway lines on an interactive map.</p>
+          <dl class="facts">
+            <div><dt>Lines</dt><dd>T1 to T4, BW1, BW2</dd></div>
+            <div><dt>Built with</dt><dd>Leaflet, OpenStreetMap, JavaScript</dd></div>
+            <div><dt>Runs</dt><dd>In the browser</dd></div>
+          </dl>
+        </div>
+        <div class="stub">
+          <a class="btn primary" href="#planner">Use the planner</a>
+          <a class="btn ghost" href="https://github.com/mohamedaitabdelmalik/Casablanca-Planner-Tramway-and-Busway" target="_blank" rel="noopener">View source code</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog class="zoom" id="zoom" aria-label="Official network map, enlarged">
+  <div class="top"><strong>Network map</strong><button class="btn ghost small" id="close-map" type="button">Close</button></div>
+  <div class="scroll"><img src="network-map.jpg" alt="Official map of the Casablanca tramway and busway network, enlarged" loading="lazy"></div>
+</dialog>
+
+<footer class="site-footer" id="contact">
+  <div class="wrap">
+    <div class="terminus"><span class="dot" aria-hidden="true"></span><span class="rail" aria-hidden="true"></span><strong>End of the line. Say hello.</strong></div>
+    <div class="row">
+      <span>© <span id="year">2026</span> Mohamed Ait Abdelmalik. All rights reserved.</span>
+      <span>
+        <a href="mailto:mohamed.aitabdelmalik@gmail.com">Email</a>
+        <a href="https://www.linkedin.com/in/mohamed-ait-abdelmalik-a7b468195/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/mohamedaitabdelmalik" target="_blank" rel="noopener">GitHub</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Planner full screen, inside the same page
+  var app = document.getElementById('app'), fs = document.getElementById('fs');
+  if (!app.requestFullscreen) { fs.style.display = 'none'; }
+  fs.addEventListener('click', function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); } else { app.requestFullscreen(); }
+  });
+  document.addEventListener('fullscreenchange', function () {
+    fs.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+  });
+
+  // Enlarge the official map
+  var dlg = document.getElementById('zoom');
+  document.getElementById('open-map').addEventListener('click', function () { dlg.showModal(); });
+  document.getElementById('close-map').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+})();
+</script>
+</body>
+</html>
